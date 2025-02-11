@@ -3,6 +3,7 @@ A state machine that can transition with arguments for Unity.
 
 [![license](https://img.shields.io/badge/LICENSE-MIT-green.svg)](LICENSE)
 ![unity-version](https://img.shields.io/badge/unity-2022.3+-000.svg)
+[![releases](https://img.shields.io/github/release/kamahir0/ArgStateMachine.svg)](https://github.com/kamahir0/ArgStateMachine/releases)
 
 ArgStateMachineはUnity用に制作したステートマシンです。Source Generatorによって、特定のステート遷移時に引数を渡すことが可能になるというユニークな機能を備えています。
 
