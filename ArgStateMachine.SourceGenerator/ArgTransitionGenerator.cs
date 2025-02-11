@@ -165,7 +165,6 @@ $@"{Utility.Header}
             argumentsClassConstructorSb.AppendLine($"                {param.Name.ToPascalCase()} = {param.Name};");
         }
         perStateSb.AppendLine($@"
-        // 引数保持用フィールド
         private {argumentsClassName} {argumentsClassFieldName} = new {argumentsClassName}();
 
         private class {argumentsClassName}
@@ -175,8 +174,8 @@ $@"{Utility.Header}
             {{
 {argumentsClassConstructorSb}
             }}
-        }}
-");
+        }}");
+
         // 遷移メソッド
         var scheduleTransitionMethodName = $"ScheduleTransitionTo{shortStateName}";
         var transitionMethodName = $"TransitionTo{shortStateName}";
