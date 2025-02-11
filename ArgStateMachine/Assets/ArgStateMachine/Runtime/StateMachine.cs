@@ -267,7 +267,6 @@ namespace ArgStateMachine
 
         internal void Push(Type state)
         {
-            LogHistroy("[Push]");
             _history[_end] = state;
             _end = (_end + 1) % _history.Length;
 
@@ -280,23 +279,18 @@ namespace ArgStateMachine
                 // 古いデータを上書き（循環バッファ）
                 _start = (_start + 1) % _history.Length;
             }
-            LogHistroy("[PushResult]");
         }
 
         internal Type Pop()
         {
-            LogHistroy("[Pop]");
             if (Count == 0) throw new InvalidOperationException("履歴が空です");
-
             _end = (_end - 1 + _history.Length) % _history.Length;
             Count--;
-            LogHistroy("[PopResult]");
             return _history[_end];
         }
 
         internal Type Peek()
         {
-            LogHistroy("[Peek]");
             if (Count == 0) return null; // 履歴が空ならnullを返す
             return _history[(_end - 1 + _history.Length) % _history.Length];
         }
@@ -306,16 +300,6 @@ namespace ArgStateMachine
             Count = 0;
             _start = 0;
             _end = 0;
-        }
-
-        private void LogHistroy(string header)
-        {
-            var logs = new string[Count];
-            for (int i = 0; i < Count; i++)
-            {
-                logs[i] = $"{i}-{_history[(i + _start) % _history.Length]}";
-            }
-            UnityEngine.Debug.Log(header + "  " + string.Join(", ", logs));
         }
     }
 }
