@@ -43,32 +43,35 @@ public class ArgTransitionGenerator : IIncrementalGenerator
             {
                 var stateMachineClassSymbol = (INamedTypeSymbol)stateMachineClassAttribute.TargetSymbol;
 
-                // ステートマシンの型引数を取得
-                if (stateMachineClassSymbol.BaseType is not { TypeArguments.Length: 2 } baseType)
+                // StateMachine<TState, TContext>を継承しているか確かめる
+                var baseType = stateMachineClassSymbol.BaseType;
+                if (baseType == null || baseType.TypeArguments.Length != 2 || baseType.TypeArguments[0] == null || baseType.TypeArguments[1] == null)
                 {
-                    return; // StateMachine<TState, TContext> でなければ処理しない
+                    return;
                 }
                 // TState（ステートの基底型）
-                var stateBaseType = (INamedTypeSymbol)(baseType.TypeArguments[0]);
+                var stateBaseClassSymbol = (INamedTypeSymbol)(baseType.TypeArguments[0]);
 
                 // stateMethodSource から、そのメソッドが TState の派生クラスに属しているものをフィルタ
-                var matchingMethods = onEnterMethodAttributes
+                var stateMethodSymbols = onEnterMethodAttributes
                     .Select(m => (MethodSymbol: (IMethodSymbol)(m.TargetSymbol), StateClassSymbol: ((IMethodSymbol)m.TargetSymbol).ContainingType))
-                    .Where(entry => entry.StateClassSymbol.InheritsFrom(stateBaseType)) // TState の派生クラスかチェック
+                    .Where(entry => entry.StateClassSymbol.InheritsFrom(stateBaseClassSymbol)) // TState の派生クラスかチェック
                     .Select(entry => entry.MethodSymbol)
                     .ToArray();
 
-                // 生成処理
-                Emit(context, stateMachineClassSymbol, matchingMethods);
+                // ステートマシンのpartialコード生成
+                EmitPartialStateMachine(context, stateMachineClassSymbol, stateMethodSymbols);
+
+                // ステート基底クラスのpartialコード生成
+                EmitPartialStateBase(context, stateMachineClassSymbol, stateBaseClassSymbol);
             }
         });
-
     }
 
     /// <summary>
-    /// ソースコード生成処理
+    /// ステートマシンのpartialコード生成処理
     /// </summary>
-    private static void Emit(SourceProductionContext context, INamedTypeSymbol stateMachineClassSymbol, IMethodSymbol[] stateMethodSymbols)
+    private static void EmitPartialStateMachine(SourceProductionContext context, INamedTypeSymbol stateMachineClassSymbol, IMethodSymbol[] stateMethodSymbols)
     {
         // クラスのネームスペースを取得
         var namespaceSymbol = stateMachineClassSymbol.ContainingNamespace.IsGlobalNamespace
@@ -76,12 +79,17 @@ public class ArgTransitionGenerator : IIncrementalGenerator
             : stateMachineClassSymbol.ContainingNamespace;
         var namespaceStr = namespaceSymbol == null ? string.Empty : $"namespace {namespaceSymbol}";
 
-        // 全てのステートに共通する接頭辞を見つける
-        var commonPrefix = GetCommonPrefix(stateMethodSymbols);
-
         // 生成するコードのビルダー
+        var constructorSb = new StringBuilder();
         var switchSb = new StringBuilder();
         var perStateSb = new StringBuilder();
+
+        // 引数を横流しするだけのコンストラクタを自動定義
+        constructorSb.AppendLine("        /// <summary> コンストラクタ </summary>");
+        constructorSb.AppendLine($"        public {stateMachineClassSymbol.Name}({stateMachineClassSymbol.BaseType.TypeArguments[1].ToDisplayString()} context, global::System.Collections.Generic.IReadOnlyList<{stateMachineClassSymbol.BaseType.TypeArguments[0].ToDisplayString()}> states) : base(context, states) {{ }}");
+
+        // 全てのステートに共通する接頭辞を見つける
+        var commonPrefix = GetCommonPrefix(stateMethodSymbols);
 
         // ステートごとのコードを作る
         foreach ( var stateMethodSymbol in stateMethodSymbols )
@@ -91,19 +99,20 @@ public class ArgTransitionGenerator : IIncrementalGenerator
             perStateSb.AppendLine(result.PerStateStr);
         }
 
-        // クラスの完全修飾名を取得
-        var fullType = stateMachineClassSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+        // ステートマシンクラスの完全修飾名をファイル名とする
+        var fileName = stateMachineClassSymbol.ToDisplayString()
             .Replace("global::", "")
             .Replace("<", "_")
             .Replace(">", "_");
 
-        // ソースコードを追加
-        context.AddSource($"{fullType}.g.cs",
+        // ステートマシンのソースコードを追加
+        context.AddSource($"{fileName}.g.cs",
 $@"{Utility.Header}
 {namespaceStr}
 {{
     partial class {stateMachineClassSymbol.Name}
     {{
+{constructorSb}
         protected override bool PrioritizeCustomOnEnter()
         {{
             switch (CurrentState)
@@ -119,10 +128,11 @@ $@"{Utility.Header}
         );
     }
 
+    // ステートごとのコードを作る
     private static (string SwitchStr, string PerStateStr) EmitPerState(IMethodSymbol stateMethodSymbol, string commonPrefix)
     {
         // ステートクラスの完全修飾名
-        var fullyQualifiedStateName = stateMethodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var fullyQualifiedStateName = stateMethodSymbol.ContainingType.ToDisplayString();
 
         // ステート名を取得
         var stateName = stateMethodSymbol.ContainingType.Name;
@@ -137,7 +147,7 @@ $@"{Utility.Header}
 
         // メソッドの引数を取得
         (string Type, string Name)[] parameters = stateMethodSymbol.Parameters
-        .Select(param => (param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), param.Name))
+        .Select(param => (param.Type.ToDisplayString(), param.Name))
         .ToArray();
         var fullParametersString = string.Join(", ", parameters.Select(p => $"{p.Item1} {p.Item2}"));
 
@@ -175,7 +185,7 @@ $@"{Utility.Header}
         /// <summary> {stateName}への遷移をスケジュールする </summary>
         public void {scheduleTransitionMethodName}({fullParametersString})
         {{
-            TransitionQueue.Enqueue(typeof({stateMethodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}));
+            TransitionQueue.Enqueue(typeof({stateMethodSymbol.ContainingType.ToDisplayString()}));
             {argumentsClassFieldName}.Set({joinedParametersString});
         }}
 
