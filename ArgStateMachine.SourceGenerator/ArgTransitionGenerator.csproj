@@ -22,11 +22,9 @@
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<!-- 無ければディレクトリを作成 -->
-		<Exec Command="if not exist &quot;$(SolutionDir)..\Verification\Assets\Plugins&quot; mkdir &quot;$(SolutionDir)..\Verification\Assets\Plugins&quot;" />
-		<Exec Command="if not exist &quot;$(SolutionDir)..\Verification2022\Assets\Plugins&quot; mkdir &quot;$(SolutionDir)..\Verification2022\Assets\Plugins&quot;" />
+		<Exec Command="if not exist &quot;$(SolutionDir)..\ArgStateMachine\Assets\ArgStateMachine\Generator&quot; mkdir &quot;$(SolutionDir)..\ArgStateMachine\Assets\ArgStateMachine\Generator&quot;" />
 		<!-- DLLをコピー -->
-		<Exec Command="copy &quot;$(TargetDir)VersatileSourceGenerator.dll&quot; &quot;$(SolutionDir)..\Verification\Assets\Plugins\VersatileSourceGenerator.dll&quot;" />
-		<Exec Command="copy &quot;$(TargetDir)VersatileSourceGenerator.dll&quot; &quot;$(SolutionDir)..\Verification2022\Assets\Plugins\VersatileSourceGenerator.dll&quot;" />
+		<Exec Command="copy &quot;$(TargetDir)ArgTransitionGenerator.dll&quot; &quot;$(SolutionDir)..\ArgStateMachine\Assets\ArgStateMachine\Generator\ArgTransitionGenerator.dll&quot;" />
 	</Target>
 
 </Project>
