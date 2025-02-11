@@ -1,0 +1,14 @@
+{
+    "name": "com.kamahir0.arg-state-machine",
+    "version": "0.1.1",
+    "displayName": "Arg State Machine",
+    "description": "A state machine that can transition with arguments for Unity.",
+    "unity": "2022.3",
+    "dependencies": {
+        
+    },
+    "author": {
+        "name": "kamahir0",
+        "url": "https://x.com/kamahir0"
+    }
+}
