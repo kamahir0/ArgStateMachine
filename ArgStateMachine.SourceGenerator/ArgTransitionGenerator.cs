@@ -197,8 +197,11 @@ $@"{Utility.Header}
     }
 
     // 共通接頭辞を導く
-    private static string GetCommonPrefix(IEnumerable<IMethodSymbol> methodSymbols)
+    private static string GetCommonPrefix(IMethodSymbol[] methodSymbols)
     {
+        // 長さが1なら空文字を返す（「共通接頭辞は無かった」とする）
+        if (methodSymbols.Length < 2) return string.Empty;
+
         var methodNames = methodSymbols.Select(m => m.ContainingType.Name).ToArray();
 
         if (methodNames.Length == 0) return string.Empty;
