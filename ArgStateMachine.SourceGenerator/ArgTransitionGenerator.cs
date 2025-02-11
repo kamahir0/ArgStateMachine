@@ -196,6 +196,41 @@ $@"{Utility.Header}
         return (switchSb.ToString(), perStateSb.ToString());
     }
 
+    /// <summary>
+    /// ステート基底クラスのpartialコード生成処理
+    /// </summary>
+    private static void EmitPartialStateBase(SourceProductionContext context, INamedTypeSymbol stateMachineClassSymbol, INamedTypeSymbol stateBaseClassSymbol)
+    {
+        // クラスのネームスペースを取得
+        var namespaceSymbol = stateBaseClassSymbol.ContainingNamespace.IsGlobalNamespace
+            ? null
+            : stateBaseClassSymbol.ContainingNamespace;
+        var namespaceStr = namespaceSymbol == null ? string.Empty : $"namespace {namespaceSymbol}";
+
+        // ステートマシンクラスの完全修飾名を取得
+        var fullyQualifiedStateMachineName = stateMachineClassSymbol.ToDisplayString();
+
+        // ステート基底クラスの完全修飾名をファイル名とする
+        var fileName = stateBaseClassSymbol.ToDisplayString()
+            .Replace("global::", "")
+            .Replace("<", "_")
+            .Replace(">", "_");
+
+        // ステートのベースクラスのソースコードを追加
+        context.AddSource($"{fileName}.g.cs",
+$@"{Utility.Header}
+{namespaceStr}
+{{
+    partial class {stateBaseClassSymbol.Name}
+    {{
+        /// <summary> ステートマシン </summary>
+        protected new {fullyQualifiedStateMachineName} StateMachine => ({fullyQualifiedStateMachineName})base.StateMachine;
+    }}
+}}
+"
+        );
+    }
+
     // 共通接頭辞を導く
     private static string GetCommonPrefix(IMethodSymbol[] methodSymbols)
     {
