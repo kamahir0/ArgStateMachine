@@ -132,7 +132,7 @@ $@"{Utility.Header}
         if (!string.IsNullOrWhiteSpace(commonPrefix))
         {
             // 全ステートに共通の接頭辞があった場合は削って短縮する
-            stateName = stateName.Substring(commonPrefix.Length);
+            shortStateName = shortStateName.Substring(commonPrefix.Length);
         }
 
         // メソッドの引数を取得
