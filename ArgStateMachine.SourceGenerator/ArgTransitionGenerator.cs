@@ -124,10 +124,14 @@ $@"{Utility.Header}
         // ステートクラスの完全修飾名
         var fullyQualifiedStateName = stateMethodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-        // ステート名を取得（全ステートに共通の接頭辞があった場合は削って短縮する）
+        // ステート名を取得
         var stateName = stateMethodSymbol.ContainingType.Name;
+
+        // 短縮ステート名を取得
+        var shortStateName = stateName;
         if (!string.IsNullOrWhiteSpace(commonPrefix))
         {
+            // 全ステートに共通の接頭辞があった場合は削って短縮する
             stateName = stateName.Substring(commonPrefix.Length);
         }
 
@@ -164,8 +168,8 @@ $@"{Utility.Header}
         }}
 ");
         // 遷移メソッド
-        var scheduleTransitionMethodName = $"ScheduleTransitionTo{stateName}";
-        var transitionMethodName = $"TransitionTo{stateName}";
+        var scheduleTransitionMethodName = $"ScheduleTransitionTo{shortStateName}";
+        var transitionMethodName = $"TransitionTo{shortStateName}";
         var joinedParametersString = string.Join(", ", parameters.Select(p => p.Name));
         perStateSb.AppendLine($@"
         /// <summary> {stateName}への遷移をスケジュールする </summary>
