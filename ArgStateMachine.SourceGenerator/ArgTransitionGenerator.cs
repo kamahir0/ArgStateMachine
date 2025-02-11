@@ -86,7 +86,7 @@ public class ArgTransitionGenerator : IIncrementalGenerator
 
         // 引数を横流しするだけのコンストラクタを自動定義
         constructorSb.AppendLine("        /// <summary> コンストラクタ </summary>");
-        constructorSb.AppendLine($"        public {stateMachineClassSymbol.Name}({stateMachineClassSymbol.BaseType.TypeArguments[1].ToDisplayString()} context, global::System.Collections.Generic.IReadOnlyList<{stateMachineClassSymbol.BaseType.TypeArguments[0].ToDisplayString()}> states) : base(context, states) {{ }}");
+        constructorSb.AppendLine($"        public {stateMachineClassSymbol.Name}({stateMachineClassSymbol.BaseType.TypeArguments[1].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} context, global::System.Collections.Generic.IReadOnlyList<{stateMachineClassSymbol.BaseType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}> states) : base(context, states) {{ }}");
 
         // 全てのステートに共通する接頭辞を見つける
         var commonPrefix = GetCommonPrefix(stateMethodSymbols);
@@ -100,7 +100,7 @@ public class ArgTransitionGenerator : IIncrementalGenerator
         }
 
         // ステートマシンクラスの完全修飾名をファイル名とする
-        var fileName = stateMachineClassSymbol.ToDisplayString()
+        var fileName = stateMachineClassSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
             .Replace("global::", "")
             .Replace("<", "_")
             .Replace(">", "_");
@@ -132,7 +132,7 @@ $@"{Utility.Header}
     private static (string SwitchStr, string PerStateStr) EmitPerState(IMethodSymbol stateMethodSymbol, string commonPrefix)
     {
         // ステートクラスの完全修飾名
-        var fullyQualifiedStateName = stateMethodSymbol.ContainingType.ToDisplayString();
+        var fullyQualifiedStateName = stateMethodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         // ステート名を取得
         var stateName = stateMethodSymbol.ContainingType.Name;
@@ -147,7 +147,7 @@ $@"{Utility.Header}
 
         // メソッドの引数を取得
         (string Type, string Name)[] parameters = stateMethodSymbol.Parameters
-        .Select(param => (param.Type.ToDisplayString(), param.Name))
+        .Select(param => (param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), param.Name))
         .ToArray();
         var fullParametersString = string.Join(", ", parameters.Select(p => $"{p.Item1} {p.Item2}"));
 
@@ -185,7 +185,7 @@ $@"{Utility.Header}
         /// <summary> {stateName}への遷移をスケジュールする </summary>
         public void {scheduleTransitionMethodName}({fullParametersString})
         {{
-            TransitionQueue.Enqueue(typeof({stateMethodSymbol.ContainingType.ToDisplayString()}));
+            TransitionQueue.Enqueue(typeof({stateMethodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}));
             {argumentsClassFieldName}.Set({joinedParametersString});
         }}
 
@@ -218,10 +218,10 @@ $@"{Utility.Header}
         var namespaceStr = namespaceSymbol == null ? string.Empty : $"namespace {namespaceSymbol}";
 
         // ステートマシンクラスの完全修飾名を取得
-        var fullyQualifiedStateMachineName = stateMachineClassSymbol.ToDisplayString();
+        var fullyQualifiedStateMachineName = stateMachineClassSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         // ステート基底クラスの完全修飾名をファイル名とする
-        var fileName = stateBaseClassSymbol.ToDisplayString()
+        var fileName = stateBaseClassSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
             .Replace("global::", "")
             .Replace("<", "_")
             .Replace(">", "_");
